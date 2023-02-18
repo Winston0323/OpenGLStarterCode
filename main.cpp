@@ -60,7 +60,8 @@ int main(void)
 	GLFWwindow* window = Window::createWindow(1920, 1080);
 
 	if (!window) exit(EXIT_FAILURE);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	//hide cursor
+	//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	// Print OpenGL and GLSL versions.
 	print_versions();
 	// Setup callbacks.

@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //render object
 Plain* Window::plain;
+ObjRender* Window::objRender;
 // Window Properties
 int Window::width;
 int Window::height;
@@ -15,6 +16,7 @@ bool Window::simStart = false;
 bool Window::RK4 = true;
 bool Window::launching = false;
 bool Window::launch = false;
+char* filename = "Obj/Cylinder9.obj";
 
 //time
 GLfloat Window::speed = 0.0f;
@@ -60,6 +62,7 @@ bool Window::initializeObjects()
 {
 	// STEP 1 : Create new object
 	plain = new Plain(5, glm::vec3(0),glm::vec3(0,0,1));
+	objRender = new ObjRender(filename);
 	return true;
 }
 
@@ -70,7 +73,6 @@ void Window::cleanUp()
 	glDeleteProgram(shaderProgram);
 }
 ////////////////////////////////////////////////////////////////////////////////
-// for the Window
 GLFWwindow* Window::createWindow(int width, int height)
 {
 	// Initialize GLFW.
@@ -151,7 +153,6 @@ void Window::resizeCallback(GLFWwindow* window, int width, int height)
 	Cam->SetAspect(float(width) / float(height));
 }
 
-////////////////////////////////////////////////////////////////////////////////
 void Window::idleCallback()
 {
 	//STEP 2 update
@@ -167,6 +168,7 @@ void Window::idleCallback()
 	else {//STEP 2.3 renderupdate when simulation not started  
 
 		lastFrameTime = glfwGetTime();
+		objRender->update(deltaTime);
 	}	
 	//STEP 2.4 always update values
 	Cam->Update(deltaTime);
@@ -179,8 +181,9 @@ void Window::displayCallback(GLFWwindow* window)
 
 	// STEP3 Render the object.
 	//test->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
-	plain->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
-	drawGUI();
+	//plain->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
+	objRender->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
+	//drawGUI();
 
 	// Gets events, including input such as keyboard and mouse or window resizing.
 	glfwPollEvents();
@@ -188,15 +191,12 @@ void Window::displayCallback(GLFWwindow* window)
 	glfwSwapBuffers(window);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-
 // helper to reset the camera
 void Window::resetCamera() 
 {
 	Cam->Reset();
 	Cam->SetAspect(float(Window::width) / float(Window::height));
 }
-////////////////////////////////////////////////////////////////////////////////
 
 // callbacks - for Interaction 
 void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -223,6 +223,9 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 			break;
 		case GLFW_KEY_D:
 			break;
+		case GLFW_KEY_N:
+			objRender->switchNorm();
+			break;
 		case GLFW_KEY_LEFT:
 
 			break;
@@ -231,9 +234,11 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 
 		case GLFW_KEY_SPACE:
 			break;
+		
 		default:
 			break;
 		}
+	
 	}
 	else if (action == GLFW_RELEASE) {
 	
@@ -268,13 +273,23 @@ void Window::cursor_callback(GLFWwindow* window, double currX, double currY) {
 
 	MouseX = (int)currX;
 	MouseY = (int)currY;
+	GLfloat lastPosX = 0;
+	GLfloat lastPosY = 0;
 	// Move camera
 	// NOTE: this should really be part of Camera::Update()
 	if (LeftDown) {
+		
+		//objRender->spin(dx, glm::vec3(0,1,0));
+		//objRender->spin(dy, glm::vec3(-1,0,0));
+		GLfloat transRate = 0.01f;
+		objRender->translationXY(dx * transRate, dy * transRate);
+		//const float rate = 1.0f;
+		//Cam->SetAzimuth(Cam->GetAzimuth() + dx * rate);	
+		//Cam->SetIncline(glm::clamp(Cam->GetIncline() - dy * rate, -90.0f, 90.0f));
 		const float rate = 1.0f;
-		Cam->SetAzimuth(Cam->GetAzimuth() + dx * rate);
-		Cam->SetIncline(glm::clamp(Cam->GetIncline() - dy * rate, -90.0f, 90.0f));
+		//objRender->spin();
 	}
+
 	if (RightDown) {
 		const float rate = 0.005f;
 		float dist = glm::clamp(Cam->GetDistance() * (1.0f - dx * rate), 0.01f, 1000.0f);
@@ -282,7 +297,6 @@ void Window::cursor_callback(GLFWwindow* window, double currX, double currY) {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
 void Window::drawGUI() {
 
 	bool show_demo_window = true;

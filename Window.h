@@ -5,6 +5,7 @@
 #include "Plain.h"
 #include "shader.h"
 #include "Camera.h"
+#include "ObjRender.h"
 #include <cstdlib>
 #include <string>
 
@@ -16,6 +17,7 @@ public:
 
 	// rendering object
 	static Plain* plain;
+	static ObjRender* objRender;
 	// Window Properties
 	static int width;
 	static int height;

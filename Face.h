@@ -13,6 +13,8 @@ public:
 	
 	//optional
 	int				& index() {return m_propertyIndex; }
+	int&			operator[](int i) { return vInd[i]; }
+	
 	std::string		& PropertyStr() { return m_propertyStr;}
 
 protected:
@@ -22,4 +24,5 @@ protected:
 	//optional	
 	std::string		m_propertyStr;
 	int				m_propertyIndex; // index to Property array
+	int				vInd[3];
 };

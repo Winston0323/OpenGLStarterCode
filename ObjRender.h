@@ -3,6 +3,8 @@
 #define _OBJRENDER_H_
 
 #include "core.h"
+#include "Mesh.h"
+#include "Iterators.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -13,11 +15,18 @@ private:
 	GLuint VBO_positions, VBO_normals, EBO;
 
 	glm::mat4 model;
+	glm::mat4 tModel;
+	glm::mat4 rModel;
 	glm::vec3 color;
+	Mesh* mesh;
 
 	// ObjRender Information
+	glm::vec3 origin;
 	std::vector<glm::vec3> positions;
+	std::vector<bool> isBoundary;
 	std::vector<glm::vec3> normals;
+	std::vector<glm::vec3> vNormals;
+	std::vector<glm::vec3> currNorm;
 	std::vector<unsigned int> indices;
 	std::vector<std::pair<glm::vec3, glm::vec3>> edges;
 
@@ -30,9 +39,13 @@ public:
 	void update();
 	void update(GLfloat deltaTime);
 	void spin(GLfloat deg, glm::vec3 axis);
+	
 	glm::vec3 getColor() { return color; }
 	void translation(glm::vec3 destination);
+	void translationXY(GLfloat x, GLfloat y);
 	void setColor(glm::vec3 val) { this->color = val; }
+	void moveToWorldCenter();
+	void switchNorm();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
