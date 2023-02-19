@@ -16,7 +16,7 @@ bool Window::simStart = false;
 bool Window::RK4 = true;
 bool Window::launching = false;
 bool Window::launch = false;
-char* filename = "Obj/Cylinder9.obj";
+char* filename = "Obj/fandisk.obj";
 
 //time
 GLfloat Window::speed = 0.0f;
@@ -279,10 +279,10 @@ void Window::cursor_callback(GLFWwindow* window, double currX, double currY) {
 	// NOTE: this should really be part of Camera::Update()
 	if (LeftDown) {
 		
-		//objRender->spin(dx, glm::vec3(0,1,0));
-		//objRender->spin(dy, glm::vec3(-1,0,0));
-		GLfloat transRate = 0.01f;
-		objRender->translationXY(dx * transRate, dy * transRate);
+		objRender->spin(dx, glm::vec3(0,1,0));
+		objRender->spin(dy, glm::vec3(-1,0,0));
+		//GLfloat transRate = 0.01f;
+		//objRender->translationXY(dx * transRate, dy * transRate);
 		//const float rate = 1.0f;
 		//Cam->SetAzimuth(Cam->GetAzimuth() + dx * rate);	
 		//Cam->SetIncline(glm::clamp(Cam->GetIncline() - dy * rate, -90.0f, 90.0f));
@@ -312,7 +312,8 @@ void Window::drawGUI() {
 	
 	ImGui::SetWindowSize(ImVec2(350, Window::height/2));
 	ImGui::SetWindowPos(ImVec2(Window::width -350,0));
-	if (ImGui::TreeNode("PIN BALL")) {
+	if (ImGui::TreeNode("Mesh")) {
+
 		ImGui::TreePop();
 	}
 	int bbindex = 1;

@@ -6,7 +6,8 @@ ObjRender::ObjRender(char inputFile[])
 {
 	// Model matrix.
 	model = glm::mat4(1.0f);
-	this->color = glm::vec3(1, 1, 1);
+	this->color = glm::vec3(1.0f, 1.0f, 1.0f);
+	this->lineColor = glm::vec3(0, 0, 0);
 	mesh = new Mesh();
 	bool flag = mesh->readOBJFile(inputFile);
 
@@ -63,7 +64,7 @@ ObjRender::ObjRender(char inputFile[])
 		glm::vec3 p1 = this->positions[ind1];
 		glm::vec3 p2 = this->positions[ind2];
 		glm::vec3 p3 = this->positions[ind3];
-		glm::vec3 normal = glm::normalize(glm::cross(p2 - p1, p3 - p1));
+		glm::vec3 normal = glm::normalize(glm::cross(p3 - p1, p2 - p1));
 		this->normals[ind1] = normal;
 		this->normals[ind2] = normal;
 		this->normals[ind3] = normal;
@@ -73,9 +74,11 @@ ObjRender::ObjRender(char inputFile[])
 		hes[0] = f->he();
 		hes[1] = hes[0]->next();
 		hes[2] = hes[0]->prev();
+
 		Point& point0 = hes[0]->target()->point();
 		Point& point1 = hes[1]->target()->point();
 		Point& point2 = hes[2]->target()->point();
+
 		double l20 = (point0 - point2).norm();
 		double l01 = (point1 - point0).norm();
 		double l12 = (point2 - point1).norm();
@@ -93,7 +96,24 @@ ObjRender::ObjRender(char inputFile[])
 	for (glm::vec3 vNorm : this->vNormals) {
 		vNorm = glm::normalize(vNorm);
 	}
+	for (MeshEdgeIterator eit(mesh); !eit.end(); ++eit) {
+		Edge* e = *eit;
+		int ind0 = e->he(0)->source()->index();
+		int ind1 = e->he(0)->target()->index();
+		edges.push_back(std::make_tuple(e->boundary(), positions[ind0], positions[ind1]));
+		
+	}
+	for (int i = 0; i < indices.size(); i+=3) {
+		edgeInd.push_back(indices[i]);
+		edgeInd.push_back(indices[i+1]);
+		edgeInd.push_back(indices[i+1]);
+		edgeInd.push_back(indices[i+2]);
+		edgeInd.push_back(indices[i+2]);
+		edgeInd.push_back(indices[i]);
+	}
+
 	moveToWorldCenter();
+
 	// Generate a vertex array (VAO) and two vertex buffer objects (VBO).
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO_positions);
@@ -139,6 +159,7 @@ ObjRender::~ObjRender()
 void ObjRender::draw(const glm::mat4& viewProjMtx, GLuint shader)
 {
 
+	//drawEdges(viewProjMtx,mode);
 	glDisable(GL_CULL_FACE);
 	// actiavte the shader program 
 	glUseProgram(shader);
@@ -153,12 +174,32 @@ void ObjRender::draw(const glm::mat4& viewProjMtx, GLuint shader)
 
 	// draw the points using triangles, indexed with the EBO
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-
+	glUniform3fv(glGetUniformLocation(shader, "DiffuseColor"), 1, &lineColor[0]);
+	
+	//draw edges
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	
 	// Unbind the VAO and shader program
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+void ObjRender::drawEdges() {
+
+	for (MeshEdgeIterator eit(mesh); !eit.end(); ++eit) {
+		Edge* e = *eit;
+		Point& point1 = e->he(0)->source()->point();
+		Point& point2 = e->he(0)->target()->point();
+		glBegin(GL_LINES);
+		glVertex3f(point1[0], point1[1], point1[2]);
+		glVertex3f(point2[0], point2[1], point2[2]);
+		glEnd();
+	}
+
+}
 ////////////////////////////////////////////////////////////////////////////////
 
 void ObjRender::update()

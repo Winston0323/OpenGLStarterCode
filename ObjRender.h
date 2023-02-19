@@ -12,12 +12,13 @@ class ObjRender
 {
 private:
 	GLuint VAO;
-	GLuint VBO_positions, VBO_normals, EBO;
+	GLuint VBO_positions, VBO_normals, EBO, EBOEdge;
 
 	glm::mat4 model;
 	glm::mat4 tModel;
 	glm::mat4 rModel;
 	glm::vec3 color;
+	glm::vec3 lineColor;
 	Mesh* mesh;
 
 	// ObjRender Information
@@ -28,7 +29,9 @@ private:
 	std::vector<glm::vec3> vNormals;
 	std::vector<glm::vec3> currNorm;
 	std::vector<unsigned int> indices;
-	std::vector<std::pair<glm::vec3, glm::vec3>> edges;
+	std::vector<unsigned int> edgeInd;
+	//std::vector<std::pair<glm::vec3, glm::vec3>> edges;
+	std::vector<std::tuple<bool, glm::vec3, glm::vec3>> edges;
 
 public:
 
@@ -46,6 +49,7 @@ public:
 	void setColor(glm::vec3 val) { this->color = val; }
 	void moveToWorldCenter();
 	void switchNorm();
+	void drawEdges();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
