@@ -16,7 +16,8 @@ bool Window::simStart = false;
 bool Window::RK4 = true;
 bool Window::launching = false;
 bool Window::launch = false;
-char* filename = "Obj/fandisk.obj";
+bool Window::translate = false;
+char* filename = "Obj/Cylinder9.obj";
 
 //time
 GLfloat Window::speed = 0.0f;
@@ -183,7 +184,7 @@ void Window::displayCallback(GLFWwindow* window)
 	//test->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
 	//plain->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
 	objRender->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
-	//drawGUI();
+	drawGUI();
 
 	// Gets events, including input such as keyboard and mouse or window resizing.
 	glfwPollEvents();
@@ -234,7 +235,10 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 
 		case GLFW_KEY_SPACE:
 			break;
-		
+		case GLFW_KEY_T:
+			translate = !translate;
+			std::cout << translate<<std::endl;
+			break;
 		default:
 			break;
 		}
@@ -279,10 +283,15 @@ void Window::cursor_callback(GLFWwindow* window, double currX, double currY) {
 	// NOTE: this should really be part of Camera::Update()
 	if (LeftDown) {
 		
-		objRender->spin(dx, glm::vec3(0,1,0));
-		objRender->spin(dy, glm::vec3(-1,0,0));
-		//GLfloat transRate = 0.01f;
-		//objRender->translationXY(dx * transRate, dy * transRate);
+
+		if (translate) {
+			GLfloat transRate = 0.01f;
+			objRender->translationXY(dx * transRate, dy * transRate);
+		}
+		else {
+			objRender->spin(dx, glm::vec3(0, 1, 0));
+			objRender->spin(dy, glm::vec3(-1, 0, 0));
+		}
 		//const float rate = 1.0f;
 		//Cam->SetAzimuth(Cam->GetAzimuth() + dx * rate);	
 		//Cam->SetIncline(glm::clamp(Cam->GetIncline() - dy * rate, -90.0f, 90.0f));
@@ -308,35 +317,18 @@ void Window::drawGUI() {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	//Windspeed show
-	ImGui::Begin("Pin Ball Engine");                          // Create a window called "Hello, world!" and append into it.
+	ImGui::Begin("Mesh");                          // Create a window called "Hello, world!" and append into it.
 	
 	ImGui::SetWindowSize(ImVec2(350, Window::height/2));
 	ImGui::SetWindowPos(ImVec2(Window::width -350,0));
-	if (ImGui::TreeNode("Mesh")) {
+	ImGui::Text("Origin: %f , %f, %f", objRender->getOrigin().x, objRender->getOrigin().y, objRender->getOrigin().z);
+	ImGui::Text("Vertex Size: %d", objRender->getVertexSize());
+	ImGui::Text("Normal Size: %d", objRender->getNormSize());
+	ImGui::Text("VertexNormal Size: %d", objRender->getVNormSize());
+	ImGui::Text("Triangle Size: %d", objRender->getTriangleSize());
+	ImGui::Text("Loop Size(b): %d", objRender->getLoopSize());
+	ImGui::Text("Connected Component Size(c): %d", objRender->getConnectedComponent());
 
-		ImGui::TreePop();
-	}
-	int bbindex = 1;
-	if (ImGui::TreeNode("Bounce balls")) {
-
-		ImGui::TreePop();
-	}
-
-
-	ImGui::End();
-	ImGui::Begin("Scores");                          // Create a window called "Hello, world!" and append into it.
-
-	ImGui::SetWindowSize(ImVec2(350, Window::height / 2));
-	ImGui::SetWindowPos(ImVec2(0, Window::height-500));
-	if (ImGui::Button("start")) {
-		simStart = !simStart;
-	}
-	
-
-	if (ImGui::Button("restore default")) {
-		resetGame();
-	}
-	ImGui::Text("Speed:%f", speed);
 	ImGui::End();
 	//draw imgui
 	ImGui::Render();

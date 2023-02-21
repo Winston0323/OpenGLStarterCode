@@ -7,10 +7,12 @@ ObjRender::ObjRender(char inputFile[])
 	// Model matrix.
 	model = glm::mat4(1.0f);
 	this->color = glm::vec3(1.0f, 1.0f, 1.0f);
-	this->lineColor = glm::vec3(0, 0, 0);
+	this->lineColor = glm::vec3(1.0f, 1.0f, 0.0f);
 	mesh = new Mesh();
 	bool flag = mesh->readOBJFile(inputFile);
-
+	connectedComponent = compute_c(mesh);
+	vertexSize = mesh->numVertices();
+	loopSize = 0;
 	if (!flag) {
 		std::cerr << "Fail to read mesh " << inputFile << ".\n";
 	}
@@ -78,7 +80,9 @@ ObjRender::ObjRender(char inputFile[])
 		Point& point0 = hes[0]->target()->point();
 		Point& point1 = hes[1]->target()->point();
 		Point& point2 = hes[2]->target()->point();
-
+		int vInd1 = hes[0]->target()->index();
+		int vInd2 = hes[1]->target()->index();
+		int vInd3 = hes[2]->target()->index();
 		double l20 = (point0 - point2).norm();
 		double l01 = (point1 - point0).norm();
 		double l12 = (point2 - point1).norm();
@@ -88,30 +92,71 @@ ObjRender::ObjRender(char inputFile[])
 		glm::vec3 norm1 = normal * angle1/(3.14f);
 		glm::vec3 norm2 = normal * angle2/(3.14f); 
 		glm::vec3 norm3 = normal * angle3/(3.14f);
-		this->vNormals[ind1] += norm1;
-		this->vNormals[ind2] += norm2;
-		this->vNormals[ind3] += norm3;
+		this->vNormals[vInd1] += norm1;
+		this->vNormals[vInd2] += norm2;
+		this->vNormals[vInd3] += norm3;
 		currNorm = normals;
 	}
+	normalSize = normals.size();
+	vNormalSize = vNormals.size();
+	//normalize vertex normals
 	for (glm::vec3 vNorm : this->vNormals) {
 		vNorm = glm::normalize(vNorm);
 	}
-	for (MeshEdgeIterator eit(mesh); !eit.end(); ++eit) {
-		Edge* e = *eit;
-		int ind0 = e->he(0)->source()->index();
-		int ind1 = e->he(0)->target()->index();
-		edges.push_back(std::make_tuple(e->boundary(), positions[ind0], positions[ind1]));
-		
+	
+	////loop through all edges 
+	//for (MeshEdgeIterator eit(mesh); !eit.end(); ++eit) {//iterate through edges
+	//	Edge* e = *eit;
+	//	int ind0 = e->he(0)->source()->index();
+	//	int ind1 = e->he(0)->target()->index();
+	//	edges.push_back(std::make_tuple(e->boundary(), positions[ind0], positions[ind1]));
+	//	
+	//	if (e->boundary()) {
+	//		edgeInd.push_back(ind0);	//line1
+	//		edgeInd.push_back(ind1);
+	//	}
+	//	std::cout << "(" << ind0 << ", " << ind1 << ")" << std::endl;
+	//}
+	for (MeshHalfedgeIterator heit(mesh); !heit.end(); ++heit) {//iterate through edges
+		Halfedge* currHE = *heit;
+		int ind0 = currHE->source()->index();
+		int ind1 = currHE->target()->index();
+		halfedgeInds.push_back(std::make_pair(ind0,ind1));
+		edgeVis.push_back(false);
 	}
-	for (int i = 0; i < indices.size(); i+=3) {
-		edgeInd.push_back(indices[i]);
-		edgeInd.push_back(indices[i+1]);
-		edgeInd.push_back(indices[i+1]);
-		edgeInd.push_back(indices[i+2]);
-		edgeInd.push_back(indices[i+2]);
-		edgeInd.push_back(indices[i]);
+	
+	//starting vertex
+	for (MeshHalfedgeIterator heit(mesh); !heit.end(); ++heit) {//iterate through edges
+		Vertex* startBoundaryVertex;
+		Halfedge* currEdge = *heit;
+		if (!currEdge->twin() && edgeVis[currEdge->index()] == false) {//it's a boundary loop and it hasnt been visited
+			startBoundaryVertex = currEdge->source();					//record start vertex 
+			edgeVis[currEdge->index()] = true;							//set as visited
+			edgeInd.push_back(halfedgeInds[currEdge->index()].first);	//push source vertex index into edgeInd
+			edgeInd.push_back(halfedgeInds[currEdge->index()].second);	//push target vertex index into edgeInd
+			//when didnt loop back start
+			while (currEdge->target() != startBoundaryVertex) {
+				currEdge = currEdge->target()->most_clw_out_halfedge(); //move to next edge 
+				edgeVis[currEdge->index()] = true;//set as visited
+				if (!currEdge->twin()) {
+					std::cout << "OKay most clw is not a boundary" << std::endl;
+				}
+				//record the edge index
+				edgeInd.push_back(halfedgeInds[currEdge->index()].first);//push source vertex index into edgeInd
+				edgeInd.push_back(halfedgeInds[currEdge->index()].second);//push target vertex index into edgeInd
+				if (currEdge->target() == startBoundaryVertex)
+				{
+					loopSize++;
+				}
+			}
+			
+		} 
+		else{
+			edgeVis[currEdge->index()] = true;//set as visited
+		}
 	}
 
+	triSize = indices.size();
 	moveToWorldCenter();
 
 	// Generate a vertex array (VAO) and two vertex buffer objects (VBO).
@@ -138,7 +183,10 @@ ObjRender::ObjRender(char inputFile[])
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices.size(), indices.data(), GL_STATIC_DRAW);
-
+	// Generate EBO, bind the EBO to the bound VAO and send the data
+	glGenBuffers(1, &EBOEdge);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOEdge);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)* edgeInd.size(), edgeInd.data(), GL_STATIC_DRAW);
 	// Unbind the VBOs.
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -168,19 +216,27 @@ void ObjRender::draw(const glm::mat4& viewProjMtx, GLuint shader)
 	glUniformMatrix4fv(glGetUniformLocation(shader, "viewProj"), 1, false, (float*)&viewProjMtx);
 	glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, (float*)&model);
 	glUniform3fv(glGetUniformLocation(shader, "DiffuseColor"), 1, &color[0]);
-
+	glUniform1i(glGetUniformLocation(shader, "Line"), 0);
+	glUniform3fv(glGetUniformLocation(shader, "LineColor"), 1, &lineColor[0]);
 	// Bind the VAO
 	glBindVertexArray(VAO);
-
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	// draw the points using triangles, indexed with the EBO
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-	glUniform3fv(glGetUniformLocation(shader, "DiffuseColor"), 1, &lineColor[0]);
 	
-	//draw edges
+	glUniform1i(glGetUniformLocation(shader, "Line"), 1);
+	
+	// Generate EBO, bind the EBO to the bound VAO and send the data
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOEdge);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_LINES, edgeInd.size(), GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	
+	////draw edges
+	//glUniform3fv(glGetUniformLocation(shader, "DiffuseColor"), 1, &lineColor[0]);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	//glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	//
 	// Unbind the VAO and shader program
 	glBindVertexArray(0);
 	glUseProgram(0);
@@ -216,7 +272,7 @@ void ObjRender::update(GLfloat deltaTime)
 ////////////////////////////////////////////////////////////////////////////////
 void ObjRender::translation(glm::vec3 destination)
 {
-	this->model = glm::translate(glm::mat4(1.0f), destination)* model;
+	this->model = glm::translate(glm::mat4(1.0f), destination);
 	this->origin = destination;
 }
 ////////////////////////////////////////////////////////////////////////////////
@@ -224,12 +280,14 @@ void ObjRender::translationXY(GLfloat x, GLfloat y)
 {
 	glm::vec3 destination = glm::vec3(x, y,this->origin.z);
 	this->model = glm::translate(glm::mat4(1.0f), destination) * model;
-	this->origin = destination;
+	this->origin += destination;
 }
 ////////////////////////////////////////////////////////////////////////////////
 void ObjRender::spin(GLfloat deg, glm::vec3 axis)
 {
+	this->model = glm::translate(glm::mat4(1.0f), -origin) * model;//to world center
 	this->model = glm::rotate(glm::radians(deg), axis) * model;
+	this->model = glm::translate(glm::mat4(1.0f),  origin) * model;//to world center
 }
 void ObjRender::moveToWorldCenter() {
 	std::vector<GLfloat> xCord;
@@ -270,4 +328,38 @@ void ObjRender::switchNorm()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
 
+}
+int ObjRender::compute_c(Mesh* mesh) {
+	int num_c = 0;
+	std::vector<int> v_visited;
+	v_visited.resize(mesh->numVertices(), 0);
+	std::vector<Vertex*> v_queue;
+	v_queue.clear();
+
+	//loop through all vertex
+	for (MeshVertexIterator vit(mesh); !vit.end(); ++vit) {
+		Vertex* v = *vit;
+		int v_ind = v->index();
+		if (!v_visited[v_ind]) {
+			num_c++;
+			v_queue.push_back(v);
+			
+			//v_visited[v_ind] = 1; //mark as visited
+			while (!v_queue.empty()) {
+				Vertex* cv = v_queue.back();
+				v_queue.pop_back();
+				v_visited[cv->index()] = 1;			//mark as visited
+				for (VertexVertexIterator vvit(cv); !vvit.end(); ++vvit) {
+					Vertex* vv = *vvit;				//current vertex
+					int vv_ind = vv->index();		//current vertex index
+					if (!v_visited[vv_ind]) {
+						
+						v_queue.push_back(vv);			//push all vertex into queue
+					}
+					
+				}
+			}
+		}
+	}
+	return num_c;
 }

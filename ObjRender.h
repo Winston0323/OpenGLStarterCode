@@ -20,7 +20,12 @@ private:
 	glm::vec3 color;
 	glm::vec3 lineColor;
 	Mesh* mesh;
-
+	int triSize;
+	int vertexSize;
+	int normalSize;
+	int vNormalSize;
+	int loopSize;
+	int connectedComponent;
 	// ObjRender Information
 	glm::vec3 origin;
 	std::vector<glm::vec3> positions;
@@ -30,8 +35,10 @@ private:
 	std::vector<glm::vec3> currNorm;
 	std::vector<unsigned int> indices;
 	std::vector<unsigned int> edgeInd;
+	std::vector<bool> edgeVis;
 	//std::vector<std::pair<glm::vec3, glm::vec3>> edges;
 	std::vector<std::tuple<bool, glm::vec3, glm::vec3>> edges;
+	std::vector<std::pair<int, int>> halfedgeInds;
 
 public:
 
@@ -50,6 +57,17 @@ public:
 	void moveToWorldCenter();
 	void switchNorm();
 	void drawEdges();
+	int compute_c(Mesh* mesh);
+	
+	//getters
+	glm::vec3 getOrigin() { return this->origin; }
+	int getTriangleSize() { return this->triSize; }
+	int getVertexSize() { return this->vertexSize; }
+	int getNormSize() { return this->normalSize; }
+	int getVNormSize() { return this->vNormalSize; }
+	int getLoopSize() { return this->loopSize; }
+	int getConnectedComponent() { return this->connectedComponent; }
+
 };
 
 ////////////////////////////////////////////////////////////////////////////////

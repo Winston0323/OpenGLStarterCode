@@ -7,23 +7,29 @@ in vec3 fragNormal;
 
 // uniforms used for lighting
 uniform vec3 AmbientColor = vec3(0.2);
-uniform vec3 LightDirection = normalize(vec3(1, 5, -2));
+uniform vec3 LightDirection = normalize(vec3(-1, 5, -2));
 uniform vec3 LightColor = vec3(1);
 uniform vec3 DiffuseColor;	// passed in from c++ side NOTE: you can also set the value here and then remove 
 							// color from the c++ side
-
+uniform vec3 LineColor;	// passed in from c++ side NOTE: you can also set the value here and then remove 
+							// color from the c++ side
+uniform int Line;
 // You can output many things. The first vec4 type output determines the color of the fragment
 out vec4 fragColor;
 
 void main()
 {
 
-	// Compute irradiance (sum of ambient & direct lighting)
-	vec3 irradiance = AmbientColor + LightColor * max(0, dot(LightDirection, fragNormal));
+	if(Line != 1){
+		// Compute irradiance (sum of ambient & direct lighting)
+		vec3 irradiance = AmbientColor + LightColor * max(0, dot(LightDirection, fragNormal));
 
-	// Diffuse reflectance
-	vec3 reflectance = irradiance * DiffuseColor;
+		// Diffuse reflectance
+		vec3 reflectance = irradiance * DiffuseColor;
 
-	// Gamma correction
-	fragColor = vec4(sqrt(reflectance), 1);
+		// Gamma correction
+		fragColor = vec4(sqrt(reflectance), 1);
+	}else{
+		fragColor = vec4(vec3(1,1,0), 1);
+	}
 }

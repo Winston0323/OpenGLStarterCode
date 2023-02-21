@@ -26,6 +26,7 @@ public:
 	static bool RK4; 
 	static bool launching;
 	static bool launch;
+	static bool translate;
 	static GLfloat speed;
 	//time
 	static GLfloat lastFrameTime;
