@@ -17,7 +17,7 @@ bool Window::RK4 = true;
 bool Window::launching = false;
 bool Window::launch = false;
 bool Window::translate = false;
-char* filename = "Obj/Cylinder9.obj";
+char* filename = "Obj/Susan.obj";
 
 //time
 GLfloat Window::speed = 0.0f;
@@ -317,17 +317,20 @@ void Window::drawGUI() {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	//Windspeed show
-	ImGui::Begin("Mesh");                          // Create a window called "Hello, world!" and append into it.
+	ImGui::Begin(filename);                          // Create a window called "Hello, world!" and append into it.
 	
 	ImGui::SetWindowSize(ImVec2(350, Window::height/2));
 	ImGui::SetWindowPos(ImVec2(Window::width -350,0));
+	ImGui::Checkbox("Translation", &translate);
 	ImGui::Text("Origin: %f , %f, %f", objRender->getOrigin().x, objRender->getOrigin().y, objRender->getOrigin().z);
 	ImGui::Text("Vertex Size: %d", objRender->getVertexSize());
 	ImGui::Text("Normal Size: %d", objRender->getNormSize());
-	ImGui::Text("VertexNormal Size: %d", objRender->getVNormSize());
+	ImGui::Text("Edge Size: %d", objRender->getEdgeSize());
+	ImGui::Text("Vertex Normal Size: %d", objRender->getVNormSize());
 	ImGui::Text("Triangle Size: %d", objRender->getTriangleSize());
 	ImGui::Text("Loop Size(b): %d", objRender->getLoopSize());
 	ImGui::Text("Connected Component Size(c): %d", objRender->getConnectedComponent());
+	ImGui::Text("Genus(g): %d", objRender->getGenus());
 
 	ImGui::End();
 	//draw imgui

@@ -12,6 +12,7 @@ ObjRender::ObjRender(char inputFile[])
 	bool flag = mesh->readOBJFile(inputFile);
 	connectedComponent = compute_c(mesh);
 	vertexSize = mesh->numVertices();
+	edgeSize = mesh->numEdges();
 	loopSize = 0;
 	if (!flag) {
 		std::cerr << "Fail to read mesh " << inputFile << ".\n";
@@ -155,8 +156,10 @@ ObjRender::ObjRender(char inputFile[])
 			edgeVis[currEdge->index()] = true;//set as visited
 		}
 	}
+	triSize = indices.size()/3;
 
-	triSize = indices.size();
+	genus = (2 - loopSize - vertexSize + edgeSize - triSize) / 2;
+	
 	moveToWorldCenter();
 
 	// Generate a vertex array (VAO) and two vertex buffer objects (VBO).
@@ -187,6 +190,7 @@ ObjRender::ObjRender(char inputFile[])
 	glGenBuffers(1, &EBOEdge);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBOEdge);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int)* edgeInd.size(), edgeInd.data(), GL_STATIC_DRAW);
+
 	// Unbind the VBOs.
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);

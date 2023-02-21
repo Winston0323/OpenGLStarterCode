@@ -24,8 +24,10 @@ private:
 	int vertexSize;
 	int normalSize;
 	int vNormalSize;
+	int edgeSize;
 	int loopSize;
 	int connectedComponent;
+	int genus;
 	// ObjRender Information
 	glm::vec3 origin;
 	std::vector<glm::vec3> positions;
@@ -64,9 +66,11 @@ public:
 	int getTriangleSize() { return this->triSize; }
 	int getVertexSize() { return this->vertexSize; }
 	int getNormSize() { return this->normalSize; }
+	int getEdgeSize() { return this->edgeSize; }
 	int getVNormSize() { return this->vNormalSize; }
 	int getLoopSize() { return this->loopSize; }
 	int getConnectedComponent() { return this->connectedComponent; }
+	int getGenus() { return this->genus; }
 
 };
 
