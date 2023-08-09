@@ -8,6 +8,7 @@
 //render object
 Plain* Window::plain;
 ObjRender* Window::objRender;
+
 // Window Properties
 int Window::width;
 int Window::height;
@@ -17,7 +18,12 @@ bool Window::RK4 = true;
 bool Window::launching = false;
 bool Window::launch = false;
 bool Window::translate = false;
-char* filename = "Obj/Susan.obj";
+bool Window::loaded = false;
+bool Window::camDecide = false;
+int meshNum = 0;
+//char* filename = "Obj/simple_block.obj";
+std::string filename = "Obj/lastproject/cone.obj";
+//char* filename = "Obj/gargoyle100k.obj";
 
 //time
 GLfloat Window::speed = 0.0f;
@@ -63,7 +69,10 @@ bool Window::initializeObjects()
 {
 	// STEP 1 : Create new object
 	plain = new Plain(5, glm::vec3(0),glm::vec3(0,0,1));
+	
 	objRender = new ObjRender(filename);
+	objRender->translation(glm::vec3(0, 0, 1));
+	//readLODMesh(); 
 	return true;
 }
 
@@ -164,15 +173,17 @@ void Window::idleCallback()
 		lastFrameTime = thisFrameTime;
 		calTime += deltaTime;
 		renderTime = renderTime - deltaTime;
-
+		objRender->update();
 	}
 	else {//STEP 2.3 renderupdate when simulation not started  
 
 		lastFrameTime = glfwGetTime();
-		objRender->update(deltaTime);
+		objRender->update();
 	}	
 	//STEP 2.4 always update values
 	Cam->Update(deltaTime);
+
+
 }
 
 void Window::displayCallback(GLFWwindow* window)
@@ -182,7 +193,7 @@ void Window::displayCallback(GLFWwindow* window)
 
 	// STEP3 Render the object.
 	//test->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
-	//plain->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
+	plain->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
 	objRender->draw(Cam->GetViewProjectMtx(), Window::shaderProgram);
 	drawGUI();
 
@@ -219,26 +230,6 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 		case GLFW_KEY_R:
 			resetCamera();
 			break;
-		case GLFW_KEY_A:
-			
-			break;
-		case GLFW_KEY_D:
-			break;
-		case GLFW_KEY_N:
-			objRender->switchNorm();
-			break;
-		case GLFW_KEY_LEFT:
-
-			break;
-		case GLFW_KEY_RIGHT:
-			break;
-
-		case GLFW_KEY_SPACE:
-			break;
-		case GLFW_KEY_T:
-			translate = !translate;
-			std::cout << translate<<std::endl;
-			break;
 		default:
 			break;
 		}
@@ -246,15 +237,6 @@ void Window::keyCallback(GLFWwindow* window, int key, int scancode, int action, 
 	}
 	else if (action == GLFW_RELEASE) {
 	
-		switch (key)
-		{
-		case GLFW_KEY_D:
-			Cam->setStartFlip(true);
-			break;
-		case GLFW_KEY_SPACE:
-		default:
-			break;
-		}
 	}
 }
 
@@ -277,28 +259,13 @@ void Window::cursor_callback(GLFWwindow* window, double currX, double currY) {
 
 	MouseX = (int)currX;
 	MouseY = (int)currY;
-	GLfloat lastPosX = 0;
-	GLfloat lastPosY = 0;
 	// Move camera
 	// NOTE: this should really be part of Camera::Update()
 	if (LeftDown) {
-		
-
-		if (translate) {
-			GLfloat transRate = 0.01f;
-			objRender->translationXY(dx * transRate, dy * transRate);
-		}
-		else {
-			objRender->spin(dx, glm::vec3(0, 1, 0));
-			objRender->spin(dy, glm::vec3(-1, 0, 0));
-		}
-		//const float rate = 1.0f;
-		//Cam->SetAzimuth(Cam->GetAzimuth() + dx * rate);	
-		//Cam->SetIncline(glm::clamp(Cam->GetIncline() - dy * rate, -90.0f, 90.0f));
 		const float rate = 1.0f;
-		//objRender->spin();
+		Cam->SetAzimuth(Cam->GetAzimuth() + dx * rate);
+		Cam->SetIncline(glm::clamp(Cam->GetIncline() - dy * rate, -90.0f, 90.0f));
 	}
-
 	if (RightDown) {
 		const float rate = 0.005f;
 		float dist = glm::clamp(Cam->GetDistance() * (1.0f - dx * rate), 0.01f, 1000.0f);
@@ -317,21 +284,34 @@ void Window::drawGUI() {
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	//Windspeed show
-	ImGui::Begin(filename);                          // Create a window called "Hello, world!" and append into it.
-	
-	ImGui::SetWindowSize(ImVec2(350, Window::height/2));
-	ImGui::SetWindowPos(ImVec2(Window::width -350,0));
-	ImGui::Checkbox("Translation", &translate);
-	ImGui::Text("Origin: %f , %f, %f", objRender->getOrigin().x, objRender->getOrigin().y, objRender->getOrigin().z);
-	ImGui::Text("Vertex Size: %d", objRender->getVertexSize());
-	ImGui::Text("Normal Size: %d", objRender->getNormSize());
-	ImGui::Text("Edge Size: %d", objRender->getEdgeSize());
-	ImGui::Text("Vertex Normal Size: %d", objRender->getVNormSize());
-	ImGui::Text("Triangle Size: %d", objRender->getTriangleSize());
-	ImGui::Text("Loop Size(b): %d", objRender->getLoopSize());
-	ImGui::Text("Connected Component Size(c): %d", objRender->getConnectedComponent());
-	ImGui::Text("Genus(g): %d", objRender->getGenus());
+	ImGui::Begin(filename.c_str());                          // Create a window called "Hello, world!" and append into it.
+	if (ImGui::Button("Start")) {
+		if (!simStart) {
+			simStart = true;
+		}
 
+	}
+
+	ImGui::SetWindowSize(ImVec2(500, Window::height/2));
+	ImGui::SetWindowPos(ImVec2(Window::width -500,0));
+	ImGui::SetWindowFontScale(1.7f);
+	ImGui::Checkbox("Translation", &translate);
+	//ImGui::Text("Origin: %f , %f, %f", objRender->getOrigin().x, objRender->getOrigin().y, objRender->getOrigin().z);
+	//ImGui::Text("Original Vertex Size: %d", objRender->getVertexSize());
+	//ImGui::Text("Normal Size: %d", objRender->getNormSize());
+	//ImGui::Text("Edge Size: %d", objRender->getEdgeSize());
+	//
+	//ImGui::Text("Face Size: %d", objRender->getTriangleSize());
+	//
+	//ImGui::Text("LOD");
+	//ImGui::Text("Current Level: %d/%d", objRender->getCurrentLODLevel(), DEFAULT_LOD_LEVEL);
+	//ImGui::Text("Lowest Vertex size: %d", DEFAULT_LOWEST_VERTEX_NUM);
+	//ImGui::Text("Active Edge Size: %d", objRender->getActiveEdgeSize());
+	//ImGui::Text("Active Vertex Size: %d", objRender->getLODVertexSize());
+	//ImGui::Text("Vertex To Collapse: %d/%d ", objRender->getEdgeToCollapse(), objRender->getLevelVertexSize());
+	//
+	//ImGui::Text("Collapsed Edge Number: %d", objRender->getCollapseEdgeSize());
+	
 	ImGui::End();
 	//draw imgui
 	ImGui::Render();
@@ -341,3 +321,4 @@ void Window::drawGUI() {
 
 void Window::resetGame() {
 }
+

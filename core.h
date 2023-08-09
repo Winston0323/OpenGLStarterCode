@@ -16,12 +16,16 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include <vector>
+#include <map>
 #include <ctype.h>
 #include <algorithm>
 #include <Math.h>
 #include <tuple>
 #include <omp.h>
 #include <iostream>
+#include <sstream>
+#include <fstream>
+#include <direct.h>
 
 //Miscs
 #define EPSILON 1e-4f
@@ -30,4 +34,7 @@
 //simulation rates
 #define DEFAULT_SIMRATE 300.0f
 #define DEFAULT_RENDRATE 100.0f
+#define DEFAULT_LOD_LEVEL 10
+#define DEFAULT_LOWEST_VERTEX_NUM 1000
+
 #endif

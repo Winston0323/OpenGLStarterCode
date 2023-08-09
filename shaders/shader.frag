@@ -30,6 +30,6 @@ void main()
 		// Gamma correction
 		fragColor = vec4(sqrt(reflectance), 1);
 	}else{
-		fragColor = vec4(vec3(1,1,0), 1);
+		fragColor = vec4(vec3(LineColor), 1);
 	}
 }

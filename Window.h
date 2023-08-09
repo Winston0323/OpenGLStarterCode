@@ -27,6 +27,8 @@ public:
 	static bool launching;
 	static bool launch;
 	static bool translate;
+	static bool loaded;
+	static bool camDecide;
 	static GLfloat speed;
 	//time
 	static GLfloat lastFrameTime;

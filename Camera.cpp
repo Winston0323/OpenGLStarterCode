@@ -26,8 +26,6 @@ void Camera::Update(GLfloat deltaTime) {
 	
 	// Compute view matrix (inverse of world matrix)
 	View = glm::inverse(world);
-
-
 	// Compute perspective projection matrix
 	Project = glm::perspective(glm::radians(FOV), Aspect, NearClip, FarClip);
 
@@ -43,7 +41,7 @@ void Camera::Reset() {
 	NearClip = 0.1f;
 	FarClip = 100.0f;
 
-	Distance = 20.0f;
+	Distance = 10.0f;
 	Azimuth = 0.0f;
 	Incline = 40.0f;
 }
@@ -51,7 +49,7 @@ void Camera::Reset() {
 ////////////////////////////////////////////////////////////////////////////////
 void Camera::restoreDefault() {
 
-	Distance = 75.0f;
+	Distance = 2.0f;
 	Azimuth = 0.0f;
 	Incline = -15.0f;
 }
